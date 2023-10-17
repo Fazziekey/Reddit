@@ -21,7 +21,6 @@ def decode(tokens_list, tokenizer, raw_text_len):
         sent = sent.split('</s>')[0]
         sent = sent.split('\n\n\n')[0]
         sent = sent.split("\n\n")[0]
-        sent = sent.split("Response: ")[0]
         sents.append(sent)
     return sents
 
@@ -34,7 +33,7 @@ def generate_result(model, tokenizer, input_txt):
                 [input_ids]).to(model.device)
     outputs = model.generate(context_enc,
                             num_return_sequences=1,
-                            max_length=2048, 
+                            max_length=512, 
                             use_cache=True,
                             temperature=0.1,
                             do_sample=True,
@@ -50,18 +49,16 @@ if __name__ == "__main__":
 
     # load datasets
     dataset = load_dataset("webis/tldr-17", split="train")
+    print(f"len(dataset): {len(dataset)}")
 
-
-    dataset = dataset.select(range(1000))
-
-
+    dataset = dataset.select(range(10000))
     print(f"len(dataset): {len(dataset)}")
     # print(dataset[0])
 
     # load model
     model_name = "/mnt/bd/fazzie-models/Llama-2-7b-hf"
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, torch_dtype=torch.float16)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.unk_token
 
@@ -76,7 +73,7 @@ if __name__ == "__main__":
 
         outputs = generate_result(model, tokenizer, input)
 
-        results = {"summary": sample['summary'], "results" : outputs, "subreddit": sample['subreddit']}
+        results = {"results" : outputs, "summary": sample['summary'], "subreddit": sample['subreddit']}
 
         with open("result.jsonl", "a+") as fout:
             fout.write(json.dumps(results)+'\n')
