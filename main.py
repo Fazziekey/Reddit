@@ -68,7 +68,7 @@ if __name__ == "__main__":
     model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
 
     progress_bar = tqdm(len(dataset))
-    
+
     for i, sample in enumerate(dataset):
 
         input = sample['summary']
@@ -79,5 +79,5 @@ if __name__ == "__main__":
 
         with open("result.jsonl", "a+") as fout:
             fout.write(json.dumps(results)+'\n')
-    progress_bar.update(1)
+        progress_bar.update(1)
 
