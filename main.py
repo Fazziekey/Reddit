@@ -10,43 +10,52 @@ from datasets import load_dataset
 from prompt import COT_PROMPT_5
 
 
+def decode(tokens_list, tokenizer, raw_text_len):
+    sents = []
 
-def generate_result(model, tokenizer, inputs):
+    for tokens in tokens_list:
+        tokens = tokens.cpu().numpy().tolist()
+        sent = tokenizer.decode(
+            tokens[raw_text_len:])
+        sent = sent.split('</s>')[0]
+        sent = sent.split('\n\n\n')[0]
+        sent = sent.split("\n\n")[0]
+        sent = sent.split("Response: ")[0]
+        sents.append(sent)
+    return sents
 
+def generate_result(model, tokenizer, input_txt):
+    print(f"Input text: {input_txt}\n")
+    input_txt = COT_PROMPT_5 + f"{input_txt}\n\n### Response:"
+    input_ids = tokenizer.encode(input_txt)
+    raw_text_len = len(input_ids)
+    context_enc = torch.tensor(
+                [input_ids]).to(model.device)
+    outputs = model.generate(context_enc,
+                            num_return_sequences=1,
+                            max_length=2048, 
+                            use_cache=True,
+                            temperature=0.1,
+                            do_sample=True,
+                            eos_token_id=[tokenizer.eos_token_id]
+                    )
 
-    inputs = tokenizer(inputs, 
-                        padding="longest",
-                        return_tensors="pt").cuda()
+    output_text = decode(outputs,tokenizer,raw_text_len)[0]
+    print(f"\nOutput text: {output_text}\n")
+    return output_text
 
-    with torch.no_grad():
-        outputs = model.generate(
-                        inputs, 
-                        num_return_sequences=1,
-                        max_length=2048, 
-                        use_cache=True,
-                        temperature=0.1,
-                        do_sample=True,
-                        eos_token_id=[tokenizer.eos_token_id],
-        )
-
-    outputs = tokenizer.decode(outputs, skip_special_tokens=False)
-
-
-    print(outputs[0])
 
 if __name__ == "__main__":
 
     # load datasets
     dataset = load_dataset("webis/tldr-17", split="train")
 
-    dataset = dataset.take(1000)
+
+    dataset = dataset.select(range(1000))
+
 
     print(f"len(dataset): {len(dataset)}")
-    print(dataset[0])
-
-    dataset = dataset.map(lambda x: {"summary": x["summary"], "subreddit": x["subreddit"], "inputs": COT_PROMPT_5.format(x["summary"])}, batched=True)
-    
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=64)
+    # print(dataset[0])
 
     # load model
     model_name = "/mnt/bd/fazzie-models/Llama-2-7b-hf"
@@ -57,16 +66,13 @@ if __name__ == "__main__":
 
     model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
 
-    for i, batch in enumerate(dataloader):
+    for i, sample in enumerate(dataset):
 
-        if i > 5 :
-            break
+        input = sample['summary']
 
-        inputs = batch['inputs']
+        outputs = generate_result(model, tokenizer, input)
 
-        outputs = generate_result(model, tokenizer, inputs)
-
-        results = {"results" : outputs}
+        results = {"summary": sample['summary'], "results" : outputs, "subreddit": sample['subreddit']}
 
         with open("result.jsonl", "a+") as fout:
             fout.write(json.dumps(results)+'\n')

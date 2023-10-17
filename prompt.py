@@ -32,6 +32,5 @@ Write a response that appropriately completes the request.\n\n
 
 
 ### Instruction:\nHere is a summary. Please categorize its emotions into nagative, positive and neutral.\n\n
-### Input:\n{input}\n\n
-### Response:
+### Input:\n
 '''
