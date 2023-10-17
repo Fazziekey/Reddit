@@ -67,7 +67,8 @@ if __name__ == "__main__":
 
     model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
 
-    progress_bar = tqdm(len(dataset))
+
+    progress_bar = tqdm(range(len(dataset)))
 
     for i, sample in enumerate(dataset):
 
