@@ -6,6 +6,7 @@ import transformers
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import LlamaForSequenceClassification, LlamaTokenizer
 from datasets import load_dataset
+from tqdm import tqdm
 
 from prompt import COT_PROMPT_5
 
@@ -66,6 +67,8 @@ if __name__ == "__main__":
 
     model = AutoModelForCausalLM.from_pretrained(model_name).cuda()
 
+    progress_bar = tqdm(len(dataset))
+    
     for i, sample in enumerate(dataset):
 
         input = sample['summary']
@@ -76,4 +79,5 @@ if __name__ == "__main__":
 
         with open("result.jsonl", "a+") as fout:
             fout.write(json.dumps(results)+'\n')
+    progress_bar.update(1)
 
