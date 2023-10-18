@@ -29,6 +29,7 @@ def generate_result(model, tokenizer, input_txt):
     input_txt = COT_PROMPT_5 + f"{input_txt}\n\n### Response:"
     input_ids = tokenizer.encode(input_txt)
     raw_text_len = len(input_ids)
+    # print(f"raw_text_len {raw_text_len}")
     context_enc = torch.tensor(
                 [input_ids]).to(model.device)
     outputs = model.generate(context_enc,
