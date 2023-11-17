@@ -7,9 +7,12 @@ pip install -r requirements.txt
 ```
 
 
-## Run
-
+## Run classification
 ```
 python3 main.py
 ```
 
+## classification analysis
+```
+spark-submit spark_cls.py
+```
